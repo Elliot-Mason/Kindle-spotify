@@ -1,0 +1,12 @@
+{
+  "id": "spotify",
+  "name": "SpotifyKindle",
+  "version": "1.0.0",
+  "description": "Spotify Now Playing, Dithered Album Art & Touch Controls",
+  "author": "Elliot Mason",
+  "icon": "🎵",
+  "backend": "server.py",
+  "client": "kindle.html",
+  "pollIntervalMs": 5000,
+  "port": 5050
+}

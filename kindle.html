@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Spotify Kindle (PW1)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #ffffff;
+      color: #000000;
+      font-family: Georgia, "Caecilia", serif;
+      overflow: hidden;
+    }
+    .flash-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #000000;
+      z-index: 9999;
+    }
+    .topbar {
+      width: 100%;
+      border-bottom: 3px solid #000000;
+      padding: 10px 18px;
+      font-family: sans-serif;
+      font-size: 15px;
+      font-weight: bold;
+      overflow: hidden;
+    }
+    .topbar-left { float: left; padding-top: 3px; }
+    .topbar-right { float: right; }
+    .top-btn {
+      display: inline-block;
+      border: 2px solid #000000;
+      background: #ffffff;
+      color: #000000;
+      font-weight: bold;
+      font-size: 13px;
+      padding: 4px 12px;
+      margin-left: 8px;
+      cursor: pointer;
+    }
+    .top-btn:active, .top-btn.btn-active {
+      background: #000000;
+      color: #ffffff;
+    }
+    .spotify-container {
+      padding: 18px 24px;
+      text-align: center;
+    }
+    .art-wrap {
+      margin: 8px auto 16px auto;
+      width: 290px;
+      height: 290px;
+      border: 3px solid #000000;
+      background: #f0f0f0;
+      overflow: hidden;
+    }
+    #art-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .sp-title {
+      font-size: 27px;
+      font-weight: bold;
+      line-height: 1.2;
+      margin-bottom: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sp-artist {
+      font-family: sans-serif;
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sp-album {
+      font-size: 17px;
+      font-style: italic;
+      color: #333333;
+      margin-bottom: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sp-badge {
+      display: inline-block;
+      background: #000000;
+      color: #ffffff;
+      font-family: monospace;
+      font-size: 15px;
+      font-weight: bold;
+      padding: 5px 16px;
+      margin-bottom: 14px;
+    }
+    .progress-section {
+      clear: both;
+      border-top: 3px solid #000000;
+      padding-top: 12px;
+      margin-top: 6px;
+      text-align: left;
+    }
+    .time-row {
+      font-family: monospace;
+      font-size: 19px;
+      font-weight: bold;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+    .time-left { float: left; }
+    .time-right { float: right; }
+    .bar-outer {
+      width: 100%;
+      height: 22px;
+      border: 3px solid #000000;
+      padding: 3px;
+    }
+    .bar-inner {
+      height: 100%;
+      background: #000000;
+      width: 0%;
+    }
+    .sp-controls {
+      display: table;
+      width: 100%;
+      margin: 18px 0 6px 0;
+      table-layout: fixed;
+    }
+    .ctrl-btn {
+      display: table-cell;
+      width: 33.3%;
+      background: #ffffff;
+      color: #000000;
+      border: 3.5px solid #000000;
+      font-family: monospace, sans-serif;
+      font-size: 21px;
+      font-weight: bold;
+      text-align: center;
+      padding: 14px 6px;
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+      vertical-align: middle;
+    }
+    .ctrl-btn:active, .ctrl-btn.btn-active {
+      background: #000000 !important;
+      color: #ffffff !important;
+    }
+    .ctrl-btn + .ctrl-btn {
+      border-left: none;
+    }
+    .ctrl-play {
+      font-size: 23px;
+      background: #f0f0f0;
+    }
+    .sp-ctrl-status {
+      font-family: monospace;
+      font-size: 15px;
+      font-weight: bold;
+      color: #333333;
+      margin-top: 8px;
+      min-height: 20px;
+      text-align: center;
+    }
+    .idle-box { padding: 65px 20px; text-align: center; }
+    .idle-box h2 { font-size: 32px; margin-bottom: 12px; }
+    .idle-box p { font-family: sans-serif; font-size: 19px; color: #333333; }
+    .ctrl-btn-idle {
+      display: inline-block;
+      background: #ffffff;
+      color: #000000;
+      border: 3.5px solid #000000;
+      font-family: monospace, sans-serif;
+      font-size: 22px;
+      font-weight: bold;
+      padding: 14px 28px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .ctrl-btn-idle:active, .ctrl-btn-idle.btn-active {
+      background: #000000 !important;
+      color: #ffffff !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="flash-overlay" class="flash-overlay"></div>
+
+  <div class="topbar">
+    <div class="topbar-left">SPOTIFY &middot; <span id="clock-txt">--:--</span></div>
+    <div class="topbar-right">
+      <span class="top-btn" id="flash-btn">Flash</span>
+    </div>
+  </div>
+
+  <div id="sp-idle" class="idle-box" style="display:none;">
+    <h2 id="sp-idle-title">No Track Currently Playing</h2>
+    <p id="sp-idle-sub">Play music on your Spotify app...</p>
+    <div>
+      <button type="button" class="ctrl-btn-idle" id="ctrl-idle-play">&#9654; Resume Playback</button>
+    </div>
+    <div class="sp-ctrl-status" id="sp-idle-status"></div>
+  </div>
+
+  <div id="sp-player" class="spotify-container">
+    <div class="art-wrap">
+      <canvas id="art-canvas" width="260" height="260"></canvas>
+    </div>
+    <div class="sp-title" id="sp-title">Loading Spotify...</div>
+    <div class="sp-artist" id="sp-artist">Please wait</div>
+    <div class="sp-album" id="sp-album"></div>
+    <div class="sp-badge" id="sp-badge">CONNECTING</div>
+    <div class="progress-section">
+      <div class="time-row">
+        <span class="time-left" id="sp-time">0:00 / 0:00</span>
+        <span class="time-right" id="sp-pct">0%</span>
+      </div>
+      <div class="bar-outer">
+        <div class="bar-inner" id="sp-bar"></div>
+      </div>
+    </div>
+
+    <!-- Touch Playback Controls for Kindle -->
+    <div class="sp-controls" id="sp-controls">
+      <button type="button" class="ctrl-btn" id="ctrl-prev" title="Previous Track">&#9198; PREV</button>
+      <button type="button" class="ctrl-btn ctrl-play" id="ctrl-play" title="Play / Pause">&#9654; PLAY</button>
+      <button type="button" class="ctrl-btn" id="ctrl-next" title="Next Track">NEXT &#9197;</button>
+    </div>
+    <div class="sp-ctrl-status" id="sp-ctrl-status"></div>
+  </div>
+
+  <script>
+    // Strict ES5 for Kindle PW1 (FW 5.6.1.1)
+    (function() {
+      var artCanvas = document.getElementById("art-canvas");
+      var artCtx = artCanvas.getContext("2d");
+      var lastArtUrl = "";
+      var spTrack = { hasTrack: false, isPlaying: false, progressMs: 0, durationMs: 0 };
+      var lastPollTime = 0;
+
+      function formatTime(ms) {
+        var totalSec = Math.max(0, Math.floor(ms / 1000));
+        var m = Math.floor(totalSec / 60);
+        var s = totalSec % 60;
+        return m + ":" + (s < 10 ? "0" : "") + s;
+      }
+
+      function updateClock() {
+        var d = new Date();
+        var h = d.getHours();
+        var m = d.getMinutes();
+        document.getElementById("clock-txt").innerHTML =
+          (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
+      }
+
+      function fullFlashRefresh() {
+        var el = document.getElementById("flash-overlay");
+        el.style.display = "block";
+        setTimeout(function() {
+          el.style.background = "#ffffff";
+          setTimeout(function() {
+            el.style.display = "none";
+            el.style.background = "#000000";
+          }, 250);
+        }, 250);
+      }
+
+      function updateSpotifyProgress() {
+        var p = spTrack.progressMs, dur = spTrack.durationMs;
+        document.getElementById("sp-time").innerHTML = formatTime(p) + " / " + formatTime(dur);
+        var pct = dur > 0 ? Math.min(100, Math.floor((p * 100) / dur)) : 0;
+        document.getElementById("sp-pct").innerHTML = pct + "%";
+        document.getElementById("sp-bar").style.width = pct + "%";
+      }
+
+      function ditherArtwork(img) {
+        var W = artCanvas.width, H = artCanvas.height;
+        artCtx.drawImage(img, 0, 0, W, H);
+        try {
+          var imgData = artCtx.getImageData(0, 0, W, H);
+          var d = imgData.data, total = W * H, gray = [], minL = 255, maxL = 0, i;
+          for (i = 0; i < total; i++) {
+            var luma = (d[i * 4] * 77 + d[i * 4 + 1] * 150 + d[i * 4 + 2] * 29) >> 8;
+            gray[i] = luma;
+            if (luma < minL) minL = luma;
+            if (luma > maxL) maxL = luma;
+          }
+          var range = maxL - minL;
+          if (range > 20) {
+            for (i = 0; i < total; i++) gray[i] = Math.floor(((gray[i] - minL) * 255) / range);
+          }
+          for (var y = 0; y < H; y++) {
+            for (var x = 0; x < W; x++) {
+              var idx = y * W + x;
+              var oldP = Math.max(0, Math.min(255, gray[idx]));
+              var newP = oldP < 128 ? 0 : 255;
+              var err = oldP - newP;
+              gray[idx] = newP;
+              if (x + 1 < W) gray[y * W + x + 1] += Math.floor((err * 7) / 16);
+              if (y + 1 < H && x - 1 >= 0) gray[(y + 1) * W + x - 1] += Math.floor((err * 3) / 16);
+              if (y + 1 < H) gray[(y + 1) * W + x] += Math.floor((err * 5) / 16);
+              if (y + 1 < H && x + 1 < W) gray[(y + 1) * W + x + 1] += Math.floor((err * 1) / 16);
+            }
+          }
+          for (i = 0; i < total; i++) {
+            var v = gray[i];
+            d[i * 4] = v; d[i * 4 + 1] = v; d[i * 4 + 2] = v; d[i * 4 + 3] = 255;
+          }
+          artCtx.putImageData(imgData, 0, 0);
+        } catch (e) {}
+      }
+
+      function sendPlayerCommand(cmd) {
+        var statusEl = document.getElementById("sp-ctrl-status");
+        var idleStatusEl = document.getElementById("sp-idle-status");
+        var isIdle = document.getElementById("sp-idle").style.display !== "none";
+        var activeStatus = isIdle ? idleStatusEl : statusEl;
+
+        var msg = cmd === "next" ? "Skipping..." : (cmd === "previous" ? "Previous..." : (cmd === "play" ? "Starting..." : "Toggling..."));
+        if (activeStatus) activeStatus.innerHTML = msg;
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/player/command", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            try {
+              var res = JSON.parse(xhr.responseText);
+              if (res.success) {
+                if (activeStatus) activeStatus.innerHTML = "";
+                setTimeout(pollSpotify, 400);
+              } else {
+                if (activeStatus) activeStatus.innerHTML = res.message || "Command failed";
+                setTimeout(function() { if (activeStatus) activeStatus.innerHTML = ""; }, 6000);
+              }
+            } catch (e) {}
+          }
+        };
+        xhr.send(JSON.stringify({ command: cmd }));
+      }
+
+      function bindTouchButton(id, callback) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var touched = false;
+        el.addEventListener("touchstart", function(e) {
+          touched = true;
+          el.className = el.className + " btn-active";
+          callback(e);
+          setTimeout(function() {
+            el.className = el.className.replace(" btn-active", "");
+          }, 300);
+          if (e.preventDefault) e.preventDefault();
+        }, false);
+        el.addEventListener("click", function(e) {
+          if (touched) {
+            touched = false;
+            return;
+          }
+          callback(e);
+        }, false);
+      }
+
+      bindTouchButton("flash-btn", fullFlashRefresh);
+      bindTouchButton("ctrl-prev", function() { sendPlayerCommand("previous"); });
+      bindTouchButton("ctrl-play", function() { sendPlayerCommand("toggle"); });
+      bindTouchButton("ctrl-next", function() { sendPlayerCommand("next"); });
+      bindTouchButton("ctrl-idle-play", function() { sendPlayerCommand("play"); });
+
+      function pollSpotify() {
+        lastPollTime = new Date().getTime();
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/api/now-playing?t=" + lastPollTime, true);
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+              var data = JSON.parse(xhr.responseText);
+              if (!data.success || !data.hasTrack) {
+                spTrack.hasTrack = false;
+                document.getElementById("sp-player").style.display = "none";
+                document.getElementById("sp-idle").style.display = "block";
+                return;
+              }
+              document.getElementById("sp-idle").style.display = "none";
+              document.getElementById("sp-player").style.display = "block";
+              spTrack = data;
+              document.getElementById("sp-title").innerHTML = data.title;
+              document.getElementById("sp-artist").innerHTML = data.artist;
+              document.getElementById("sp-album").innerHTML = data.album;
+              document.getElementById("sp-badge").innerHTML = data.isPlaying ? "PLAYING" : "PAUSED";
+              var playBtn = document.getElementById("ctrl-play");
+              if (playBtn) playBtn.innerHTML = data.isPlaying ? "&#10074;&#10074; PAUSE" : "&#9654; PLAY";
+              updateSpotifyProgress();
+              var artUrl = data.artworkUrl || data.artworkUrlSmall;
+              if (artUrl && artUrl !== lastArtUrl) {
+                lastArtUrl = artUrl;
+                var img = new Image();
+                img.onload = function() { ditherArtwork(img); };
+                img.src = "/api/artwork?url=" + encodeURIComponent(artUrl);
+              }
+            } catch (e) {}
+          }
+        };
+        xhr.send();
+      }
+
+      setInterval(function() {
+        updateClock();
+        var now = new Date().getTime();
+        if (spTrack.hasTrack && spTrack.isPlaying) {
+          spTrack.progressMs = Math.min(spTrack.durationMs, spTrack.progressMs + 1000);
+          updateSpotifyProgress();
+        }
+        if (now - lastPollTime >= 5000) {
+          pollSpotify();
+        }
+      }, 1000);
+
+      updateClock();
+      pollSpotify();
+    })();
+  </script>
+</body>
+</html>
