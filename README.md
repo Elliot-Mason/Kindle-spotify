@@ -51,9 +51,67 @@ Compatible with [Kindle-simulator](https://github.com/Elliot-Mason/Kindle-simula
 
 ---
 
+## Running Natively on a Jailbroken Kindle (No PC Needed)
+
+You can run this Spotify player directly on your Kindle with **zero external PC or server running**. The Kindle will connect to Wi-Fi, communicate with the Spotify Web API, and render album art and touch controls on-device.
+
+### Prerequisites
+1. **Jailbroken Kindle Paperwhite 1** (FW 5.6.1.1 or similar).
+2. **KUAL** (Kindle Unified Application Launcher) installed.
+3. **Python 3** installed on Kindle (install NiLuJe's `python3` package via MRPI or KUAL from the MobileRead forum).
+
+### Installation Steps
+1. Perform the initial Spotify OAuth authentication on your PC once (steps 1 & 2 above) to generate your authorized `config.json` containing your refresh token.
+2. Connect your Kindle to your computer via USB.
+3. Copy this entire folder into the Kindle's `extensions` directory:
+   ```
+   [Kindle USB Root]
+     └── extensions/
+         └── spotify/              <-- Copy this repo here
+             ├── config.xml
+             ├── menu.json
+             ├── bin/launcher.sh
+             ├── server.py
+             ├── kindle.html
+             └── config.json       (containing your Spotify tokens)
+   ```
+4. Safely eject and unplug the USB cable.
+
+### Launching on the Kindle
+1. On your Kindle home screen, tap **KUAL**.
+2. Select **Spotify Kindle** &rarr; tap **Start (Standalone On-Device)**.
+3. The launcher will automatically:
+   - Prevent screensaver/sleep timeout (`preventScreenSaver = 1`).
+   - Launch `python3 server.py` in the background on `127.0.0.1:5050`.
+   - Open the Kindle Experimental Browser directly to `http://127.0.0.1:5050/kindle`.
+4. Your Spotify player will now run live with interactive touch controls completely standalone!
+
+### Stopping the App
+Open **KUAL** &rarr; **Spotify Kindle** &rarr; **Stop App & Re-enable Sleep**.
+
+---
+
 ## Testing in Kindle Simulator
 
 You can test this app inside [Kindle-simulator](https://github.com/Elliot-Mason/Kindle-simulator):
 ```bash
 python /path/to/Kindle-simulator/server.py --app .
+```
+
+---
+
+## Architecture
+
+```
+Kindle-spotify/
+├── config.xml              # KUAL extension manifest for jailbroken Kindle
+├── menu.json               # KUAL on-device menu definition
+├── bin/
+│   └── launcher.sh         # On-device background daemon & browser launcher
+├── kindle-app.json         # Plugin manifest for Kindle-simulator
+├── kindle.html             # High-contrast ES5 Spotify player with touch controls
+├── server.py               # Pure-Python Spotify OAuth & REST API proxy
+├── config.example.json     # Configuration template
+├── .gitignore              # Ignores local tokens and caches
+└── README.md
 ```
